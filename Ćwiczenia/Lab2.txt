@@ -1,0 +1,169 @@
+----------------------------Zadanie I-----------------------------
+DROP TABLE Countries CASCADE CONSTRAINTS;
+DROP TABLE Departments CASCADE CONSTRAINTS;
+DROP TABLE Employees CASCADE CONSTRAINTS;
+DROP TABLE Job_History CASCADE CONSTRAINTS;
+DROP TABLE Jobs CASCADE CONSTRAINTS;
+DROP TABLE Locations CASCADE CONSTRAINTS;
+DROP TABLE Regions CASCADE CONSTRAINTS;
+
+
+----------------------------Zadanie II----------------------------
+CREATE TABLE regions AS SELECT * FROM hr.regions;
+CREATE TABLE countries AS SELECT * FROM hr.countries;
+CREATE TABLE locations AS SELECT * FROM hr.locations;
+CREATE TABLE departments AS SELECT * FROM hr.departments;
+CREATE TABLE employees AS SELECT * FROM hr.employees;
+CREATE TABLE job_history AS SELECT * FROM hr.job_history;
+CREATE TABLE jobs AS SELECT * FROM hr.jobs;
+
+ALTER TABLE regions ADD PRIMARY KEY (region_id);
+ALTER TABLE countries ADD PRIMARY KEY (country_id);
+ALTER TABLE locations ADD PRIMARY KEY (location_id);
+ALTER TABLE departments ADD PRIMARY KEY (department_id);
+ALTER TABLE employees ADD PRIMARY KEY (employee_id);
+ALTER TABLE jobs ADD PRIMARY KEY (job_id);
+ALTER TABLE job_history ADD PRIMARY KEY (employee_id, start_date);
+
+ALTER TABLE Countries
+ADD CONSTRAINT fk_countries_regions
+FOREIGN KEY (region_id) REFERENCES Regions(region_id);
+
+ALTER TABLE Locations
+ADD CONSTRAINT fk_locations_countries
+FOREIGN KEY (country_id) REFERENCES Countries(country_id);
+
+ALTER TABLE Departments
+ADD CONSTRAINT fk_departments_locations
+FOREIGN KEY (location_id) REFERENCES Locations(location_id);
+
+ALTER TABLE Employees
+ADD CONSTRAINT fk_employees_jobs
+FOREIGN KEY (job_id) REFERENCES Jobs(job_id);
+
+ALTER TABLE Employees
+ADD CONSTRAINT fk_employees_departments
+FOREIGN KEY (department_id) REFERENCES Departments(department_id);
+
+ALTER TABLE Employees
+ADD CONSTRAINT fk_employees_manager
+FOREIGN KEY (manager_id) REFERENCES Employees(employee_id);
+
+ALTER TABLE Departments
+ADD CONSTRAINT fk_departments_manager
+FOREIGN KEY (manager_id) REFERENCES Employees(employee_id);
+
+ALTER TABLE Job_History
+ADD CONSTRAINT fk_job_history_employee
+FOREIGN KEY (employee_id) REFERENCES Employees(employee_id);
+
+ALTER TABLE Job_History
+ADD CONSTRAINT fk_job_history_job
+FOREIGN KEY (job_id) REFERENCES Jobs(job_id);
+
+ALTER TABLE Job_History
+ADD CONSTRAINT fk_job_history_department
+FOREIGN KEY (department_id) REFERENCES Departments(department_id);
+
+----------------------------Zadanie III---------------------------
+----------------------------Zadanie 1-----------------------------
+SELECT last_name||' '||salary AS wynagrodzenie
+FROM employees
+WHERE 1=1
+    AND department_id IN(20,50)
+    AND salary BETWEEN 2000 AND 7000
+ORDER BY last_name;
+    
+
+----------------------------Zadanie 2-----------------------------
+SELECT hire_date, last_name, manager_id
+FROM employees
+WHERE 1=1
+    AND manager_id IS NOT NULL
+    AND EXTRACT(YEAR from hire_date) = 2005
+ORDER BY manager_id;
+
+----------------------------Zadanie 3-----------------------------
+SELECT first_name||' '||last_name AS fist_last_name, salary, phone_number
+FROM employees
+WHERE 1=1
+    AND SUBSTR(LOWER(last_name), 3, 1) = 'e'
+    AND LOWER(first_name) LIKE '%in%'
+ORDER BY first_name ASC, salary DESC;
+    
+
+----------------------------Zadanie 4-----------------------------
+SELECT first_name || ' ' || last_name AS imie_nazwisko,
+    ROUND(MONTHS_BETWEEN(SYSDATE, hire_date)) AS miesiace_przepracowane,
+    CASE 
+        WHEN ROUND(MONTHS_BETWEEN(SYSDATE, hire_date)) < 150 THEN salary * 0.10
+        WHEN ROUND(MONTHS_BETWEEN(SYSDATE, hire_date)) BETWEEN 150 AND 199 THEN salary * 0.20
+        ELSE salary * 0.30
+    END AS wysokosc_dodatku
+FROM employees
+ORDER BY miesiace_przepracowane;
+
+
+----------------------------Zadanie 5-----------------------------
+SELECT department_id,
+    SUM(salary) AS suma_zarobkow,
+    ROUND(AVG(salary)) AS srednia_zarobkow
+FROM employees
+GROUP BY department_id
+HAVING MIN(salary) > 5000;
+
+
+----------------------------Zadanie 6-----------------------------
+SELECT e.last_name,
+    e.department_id,
+    d.department_name,
+    e.job_id
+FROM 
+    employees e
+JOIN 
+    departments d ON e.department_id = d.department_id
+JOIN 
+    locations l ON d.location_id = l.location_id
+WHERE 
+    l.city = 'Toronto';
+
+----------------------------Zadanie 7-----------------------------
+
+
+----------------------------Zadanie 8-----------------------------
+
+
+----------------------------Zadanie 9-----------------------------
+
+
+----------------------------Zadanie 10----------------------------
+
+
+----------------------------Zadanie 11----------------------------
+
+
+----------------------------Zadanie 12----------------------------
+
+
+----------------------------Zadanie 13----------------------------
+
+
+----------------------------Zadanie 14----------------------------
+
+
+----------------------------Zadanie 15----------------------------
+
+
+----------------------------Zadanie 16----------------------------
+
+
+----------------------------Zadanie 17----------------------------
+
+
+----------------------------Zadanie 18----------------------------
+
+
+----------------------------Zadanie 19----------------------------
+
+
+----------------------------Zadanie 20----------------------------
