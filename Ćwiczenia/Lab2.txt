@@ -120,44 +120,122 @@ SELECT e.last_name,
     e.job_id
 FROM 
     employees e
-JOIN 
-    departments d ON e.department_id = d.department_id
-JOIN 
+INNER JOIN 
+    departments d ON e.department_id = d.department_id 
     locations l ON d.location_id = l.location_id
 WHERE 
     l.city = 'Toronto';
 
+
 ----------------------------Zadanie 7-----------------------------
+SELECT 
+    e.first_name AS employee_first_name,
+    e.last_name AS employee_last_name,
+    w.first_name AS coworker_first_name,
+    w.last_name AS coworker_last_name
+FROM 
+    employees e
+LEFT JOIN employees w
+    ON e.department_id = w.department_id
+    AND e.employee_id != w.employee_id
+WHERE 
+    e.first_name = 'Jennifer';
+
 
 
 ----------------------------Zadanie 8-----------------------------
+SELECT 
+    d.department_id,
+    d.department_name
+FROM 
+    departments d
+LEFT JOIN Employees e
+    ON d.department_id = e.department_id
+WHERE 
+    e.department_id IS NULL;
 
 
 ----------------------------Zadanie 9-----------------------------
+SELECT first_name,
+    last_name,
+    job_id,
+    salary
+FROM employees;
 
+!!!!DO POPRAWKI!!!!
 
 ----------------------------Zadanie 10----------------------------
+SELECT e.first_name,
+    e.last_name,
+    e.salary
+FROM 
+    employees e
+WHERE 
+    e.salary > (SELECT AVG(salary) FROM employees)
+ORDER BY 
+    e.salary DESC;
 
 
 ----------------------------Zadanie 11----------------------------
+SELECT e.employee_id, 
+    e.first_name, 
+    e.last_name
+FROM employees e
+WHERE e.department_id IN (
+    SELECT DISTINCT e2.department_id
+    FROM employees e2
+    WHERE e2.last_name LIKE '%u%'
+);
 
 
 ----------------------------Zadanie 12----------------------------
+SELECT first_name,
+    last_name
+FROM employees
+WHERE (SYSDATE - hire_date) > (
+    SELECT AVG(SYSDATE - hire_date) 
+    FROM employees
+);
 
 
 ----------------------------Zadanie 13----------------------------
+SELECT d.department_name, 
+       COUNT(e.employee_id) AS num_employees, 
+       ROUND(AVG(e.salary), 2) AS avg_salary
+FROM departments d
+JOIN employees e ON d.department_id = e.department_id
+GROUP BY d.department_name
+ORDER BY num_employees DESC;
 
 
 ----------------------------Zadanie 14----------------------------
+SELECT e.first_name, 
+    e.last_name
+FROM employees e
+WHERE e.salary < (
+    SELECT MIN(e2.salary)
+    FROM employees e2
+    JOIN departments d ON e2.department_id = d.department_id
+    WHERE d.department_name = 'IT'
+);
 
 
 ----------------------------Zadanie 15----------------------------
 
 
 ----------------------------Zadanie 16----------------------------
+SELECT j.job_title, 
+    AVG(e.salary) AS avg_salary
+FROM employees e
+JOIN jobs j ON e.job_id = j.job_id
+GROUP BY j.job_title
+ORDER BY avg_salary DESC
+FETCH FIRST 5 ROWS ONLY;
+
 
 
 ----------------------------Zadanie 17----------------------------
+
 
 
 ----------------------------Zadanie 18----------------------------
@@ -167,3 +245,10 @@ WHERE
 
 
 ----------------------------Zadanie 20----------------------------
+SELECT d.department_name, 
+    ROUND(AVG(e.salary), 2) AS avg_salary
+FROM employees e
+JOIN departments d ON e.department_id = d.department_id
+GROUP BY d.department_name
+ORDER BY avg_salary DESC
+FETCH FIRST 3 ROWS ONLY;
