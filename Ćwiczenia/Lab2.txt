@@ -221,6 +221,13 @@ WHERE e.salary < (
 
 
 ----------------------------Zadanie 15----------------------------
+SELECT DISTINCT d.department_id, d.department_name
+FROM Departments d
+JOIN Employees e ON d.department_id = e.department_id
+WHERE e.salary > (
+    SELECT AVG(salary)
+    FROM Employees
+);
 
 
 ----------------------------Zadanie 16----------------------------
@@ -235,13 +242,40 @@ FETCH FIRST 5 ROWS ONLY;
 
 
 ----------------------------Zadanie 17----------------------------
+SELECT 
+    r.region_name,
+    COUNT(DISTINCT c.country_id) AS liczba_krajow,
+    COUNT(e.employee_id) AS liczba_pracownikow
+FROM Regions r
+LEFT JOIN Countries c ON r.region_id = c.region_id
+LEFT JOIN Locations l ON c.country_id = l.country_id
+LEFT JOIN Departments d ON l.location_id = d.location_id
+LEFT JOIN Employees e ON d.department_id = e.department_id
+GROUP BY r.region_name
+ORDER BY r.region_name;
 
 
 
 ----------------------------Zadanie 18----------------------------
+SELECT 
+    e.first_name AS imie_pracownika,
+    e.last_name AS nazwisko_pracownika,
+    e.salary AS pensja_pracownika,
+    m.first_name AS imie_menedzera,
+    m.last_name AS nazwisko_menedzera,
+    m.salary AS pensja_menedzera
+FROM Employees e
+JOIN Employees m ON e.manager_id = m.employee_id
+WHERE e.salary > m.salary;
 
 
 ----------------------------Zadanie 19----------------------------
+SELECT 
+    TO_CHAR(hire_date, 'Month') AS miesiac,
+    COUNT(*) AS liczba_pracownikow
+FROM Employees
+GROUP BY TO_CHAR(hire_date, 'Month'), TO_CHAR(hire_date, 'MM')
+ORDER BY TO_CHAR(hire_date, 'MM');
 
 
 ----------------------------Zadanie 20----------------------------
