@@ -1,0 +1,212 @@
+----------------------------Zadanie 1-----------------------------
+CREATE VIEW v_wysokie_pensje AS
+SELECT employee_id,
+    first_name,
+    last_name,
+    salary
+FROM employees
+WHERE 1=1
+    AND salary > 6000;
+    
+SELECT * FROM v_wysokie_pensje
+
+
+----------------------------Zadanie 2-----------------------------
+CREATE OR REPLACE VIEW v_wysokie_pensje AS
+SELECT employee_id,
+    first_name,
+    last_name,
+    salary
+FROM employees
+WHERE 1=1
+    AND salary > 12000;
+    
+SELECT * FROM v_wysokie_pensje
+
+----------------------------Zadanie 3-----------------------------
+DROP VIEW v_wysokie_pensje;
+
+----------------------------Zadanie 4-----------------------------
+CREATE OR REPLACE VIEW employee_view AS
+SELECT e.employee_id,
+    e.first_name,
+    e.last_name
+FROM employees e
+LEFT JOIN departments d 
+     ON e.department_id = d.department_id
+WHERE 1=1
+    AND d.department_name = 'Finance';
+    
+SELECT * FROM employee_view;
+
+
+----------------------------Zadanie 5-----------------------------
+CREATE OR REPLACE VIEW employee_view_salary AS
+SELECT e.employee_id,
+    e.first_name,
+    e.last_name,
+    e.salary,
+    e.job_id,
+    e.email,
+    e.hire_date
+FROM employees e
+WHERE 1=1
+    AND e.salary > 5000 AND e.salary < 12000;
+    
+SELECT * FROM employee_view_salary;
+
+
+----------------------------Zadanie 6-----------------------------
+-----a------
+INSERT INTO employee_view_salary(
+    employee_id,
+    first_name,
+    last_name,
+    salary,
+    job_id,
+    email,
+    hire_date
+)
+VALUES(
+    '207',
+    'Anna',
+    'Nowak',
+    '21370',
+    'AD_VP',
+    'SKING',
+    '03/06/17'
+);
+
+JEST TO MOŻLIWE
+
+
+-----b------
+UPDATE employee_view_salary
+SET employee_view_salary.salary = 10000
+WHERE employee_view_salary.employee_id = 103;
+
+JEST TO MOŻLIWE
+
+-----c------
+
+DELETE FROM employee_view
+WHERE employee_view.employee_id = 108;
+
+Naruszono więzy spójności - znaleziono rekord podrzędny
+
+
+----------------------------Zadanie 7-----------------------------
+CREATE VIEW department_employee_summary AS
+SELECT 
+    d.department_id, 
+    d.department_name, 
+    COUNT(e.employee_id) AS num_employees, 
+    AVG(e.salary) AS avg_salary, 
+    MAX(e.salary) AS max_salary
+FROM 
+    departments d
+JOIN 
+    employees e ON d.department_id = e.department_id
+GROUP BY 
+    d.department_id, d.department_name
+HAVING 
+    COUNT(e.employee_id) >= 4;
+
+----------------------------Zadanie 8-----------------------------
+CREATE VIEW employee_view_salary_check AS
+SELECT e.employee_id,
+    e.first_name,
+    e.last_name,
+    e.salary,
+    e.job_id,
+    e.email,
+    e.hire_date
+FROM employees e
+WHERE 1=1
+    AND e.salary > 5000 AND e.salary < 12000
+WITH CHECK OPTION;
+
+-----a------
+INSERT INTO employee_view_salary_check(
+    employee_id,
+    first_name,
+    last_name,
+    salary,
+    job_id,
+    email,
+    hire_date
+)
+VALUES(
+    '208',
+    'Jan',
+    'Nowak',
+    '6500',
+    'AD_VP',
+    'SKING',
+    '03/06/17'
+);
+    
+JEST TO MOŻLIWE	
+	
+-----b------
+INSERT INTO employee_view_salary_check(
+    employee_id,
+    first_name,
+    last_name,
+    salary,
+    job_id,
+    email,
+    hire_date
+)
+VALUES(
+    '209',
+    'Grzegorz',
+    'Nowak',
+    '16500',
+    'AD_VP',
+    'SKING',
+    '03/06/17'
+);
+    
+Naruszenie klauzuli WHERE dla perspektywy z WITH CHECK OPTION
+
+----------------------------Zadanie 9-----------------------------
+CREATE MATERIALIZED VIEW v_managerowie AS
+SELECT 
+    e.employee_id,
+    e.first_name,
+    e.last_name,
+    e.job_id,
+    d.department_name
+FROM 
+    employees e
+JOIN 
+    departments d ON e.department_id = d.department_id
+WHERE 
+    e.employee_id IN (SELECT DISTINCT manager_id FROM employees WHERE manager_id IS NOT NULL);
+
+
+----------------------------Zadanie 10----------------------------
+CREATE VIEW v_najlepiej_oplacani AS
+SELECT 
+    employee_id,
+    first_name,
+    last_name,
+    salary,
+    job_id,
+    department_id
+FROM 
+    (SELECT 
+        employee_id,
+        first_name,
+        last_name,
+        salary,
+        job_id,
+        department_id
+    FROM 
+        employees
+    ORDER BY salary DESC)
+WHERE ROWNUM <= 10;
+
+
+SELECT * FROM v_najlepiej_oplacani;
