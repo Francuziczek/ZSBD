@@ -1,0 +1,461 @@
+----------------------------Zadanie 1-----------------------------
+CREATE OR REPLACE PROCEDURE dodaj_job (
+    p_job_id    IN jobs.job_id%TYPE,
+    p_job_title IN jobs.job_title%TYPE
+) AS
+BEGIN
+    INSERT INTO jobs (job_id, job_title)
+    VALUES (p_job_id, p_job_title);
+
+    DBMS_OUTPUT.PUT_LINE('Dodano stanowisko: ' || p_job_id || ' - ' || p_job_title);
+
+EXCEPTION
+    WHEN DUP_VAL_ON_INDEX THEN
+        DBMS_OUTPUT.PUT_LINE('BŁĄD: Job_id już istnieje.');
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Wystąpił nieoczekiwany błąd: ' || SQLERRM);
+END;
+/
+
+-----test poprawny-----
+BEGIN
+    dodaj_job(400, 'NEW TEST JOB');
+END;
+
+-----test wyjątek-----
+BEGIN
+    dodaj_job(400, 'DUPLICATE TEST');
+END;
+
+
+----------------------------Zadanie 2-----------------------------
+CREATE OR REPLACE PROCEDURE modyfikuj_job_title (
+    p_job_id      IN jobs.job_id%TYPE,
+    p_new_title   IN jobs.job_title%TYPE
+) AS
+    e_no_update EXCEPTION;          -- własny wyjątek
+    PRAGMA EXCEPTION_INIT(e_no_update, -20001);  -- przypisanie numeru błędu
+BEGIN
+    UPDATE jobs
+    SET job_title = p_new_title
+    WHERE job_id = p_job_id;
+
+    IF SQL%ROWCOUNT = 0 THEN
+        -- Rzucenie własnego błędu
+        RAISE_APPLICATION_ERROR(-20001, 'Brak rekordów do modyfikacji!');
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE('Zaktualizowano job_id=' || p_job_id ||
+                         ' na tytuł: ' || p_new_title);
+
+EXCEPTION
+    WHEN e_no_update THEN
+        DBMS_OUTPUT.PUT_LINE('BŁĄD: ' || SQLERRM);
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Nieoczekiwany błąd: ' || SQLERRM);
+END;
+/
+
+-----test poprawny-----
+BEGIN
+    modyfikuj_job_title(400, 'UPDATED TEST JOB');
+END;
+
+-----test wyjątek-----
+BEGIN
+    modyfikuj_job_title(9999, 'NO SUCH JOB');
+END;
+
+
+
+----------------------------Zadanie 3-----------------------------
+CREATE OR REPLACE PROCEDURE usun_job (
+    p_job_id IN jobs.job_id%TYPE
+) AS
+    e_no_delete EXCEPTION;
+    PRAGMA EXCEPTION_INIT(e_no_delete, -20002);   -- własny numer błędu
+BEGIN
+    DELETE FROM jobs
+    WHERE job_id = p_job_id;
+
+    IF SQL%ROWCOUNT = 0 THEN
+        RAISE_APPLICATION_ERROR(-20002, 'Nie usunięto żadnego wiersza job_id nie istnieje!');
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE('Usunięto rekord o job_id=' || p_job_id);
+
+EXCEPTION
+    WHEN e_no_delete THEN
+        DBMS_OUTPUT.PUT_LINE('BŁĄD: ' || SQLERRM);
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Nieoczekiwany błąd: ' || SQLERRM);
+END;
+/
+
+INSERT INTO jobs (job_id, job_title) VALUES (999, 'TEST DELETE');
+COMMIT;
+
+-----test poprawny-----
+BEGIN
+    usun_job(999);
+END;
+
+-----test wyjątek-----
+BEGIN
+    usun_job(123456);
+END;
+
+
+
+----------------------------Zadanie 4-----------------------------
+CREATE OR REPLACE PROCEDURE pobierz_dane_pracownika (
+    p_employee_id IN  employees.employee_id%TYPE,
+    p_salary      OUT employees.salary%TYPE,
+    p_last_name   OUT employees.last_name%TYPE
+) AS
+BEGIN
+    SELECT salary, last_name
+    INTO p_salary, p_last_name
+    FROM employees
+    WHERE employee_id = p_employee_id;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Pracownik o ID ' || p_employee_id || ' nie istnieje.');
+        p_salary := NULL;
+        p_last_name := NULL;
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Nieoczekiwany błąd: ' || SQLERRM);
+        p_salary := NULL;
+        p_last_name := NULL;
+END;
+/
+
+-----test poprawny-----
+DECLARE
+    v_salary    employees.salary%TYPE;
+    v_last_name employees.last_name%TYPE;
+BEGIN
+    pobierz_dane_pracownika(100, v_salary, v_last_name);
+
+    DBMS_OUTPUT.PUT_LINE('Nazwisko: ' || v_last_name);
+    DBMS_OUTPUT.PUT_LINE('Zarobki: ' || v_salary);
+END;
+
+-----test wyjątek-----
+DECLARE
+    v_salary    employees.salary%TYPE;
+    v_last_name employees.last_name%TYPE;
+BEGIN
+    pobierz_dane_pracownika(99999, v_salary, v_last_name);
+END;
+
+
+
+----------------------------Zadanie 5-----------------------------
+CREATE SEQUENCE emp_seq START WITH 3000 INCREMENT BY 1;
+
+CREATE OR REPLACE PROCEDURE dodaj_pracownika (
+    p_first_name   IN employees.first_name%TYPE    DEFAULT NULL,
+    p_last_name    IN employees.last_name%TYPE,
+    p_email        IN employees.email%TYPE         DEFAULT NULL,
+    p_phone        IN employees.phone_number%TYPE  DEFAULT NULL,
+    p_hire_date    IN employees.hire_date%TYPE     DEFAULT SYSDATE,
+    p_job_id       IN employees.job_id%TYPE        DEFAULT NULL,
+    p_salary       IN employees.salary%TYPE        DEFAULT 0,
+    p_commission   IN employees.commission_pct%TYPE DEFAULT NULL,
+    p_manager_id   IN employees.manager_id%TYPE    DEFAULT NULL,
+    p_department_id IN employees.department_id%TYPE DEFAULT NULL
+) AS
+    e_salary_high EXCEPTION;
+    PRAGMA EXCEPTION_INIT(e_salary_high, -20010);
+BEGIN
+    -- Walidacja wynagrodzenia
+    IF p_salary > 20000 THEN
+        RAISE_APPLICATION_ERROR(-20010, 'Wynagrodzenie przekracza 20000!');
+    END IF;
+
+    -- Wstawianie pracownika
+    INSERT INTO employees (
+        employee_id, first_name, last_name, email, phone_number,
+        hire_date, job_id, salary, commission_pct, manager_id, department_id
+    )
+    VALUES (
+        emp_seq.NEXTVAL,        -- ID z sekwencji
+        p_first_name,
+        p_last_name,
+        p_email,
+        p_phone,
+        p_hire_date,
+        p_job_id,
+        p_salary,
+        p_commission,
+        p_manager_id,
+        p_department_id
+    );
+
+    DBMS_OUTPUT.PUT_LINE('Dodano pracownika: ' || p_last_name ||
+                         ', ID = ' || emp_seq.CURRVAL);
+EXCEPTION
+    WHEN e_salary_high THEN
+        DBMS_OUTPUT.PUT_LINE('BŁĄD: ' || SQLERRM);
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Nieoczekiwany błąd: ' || SQLERRM);
+END;
+/
+
+-----test poprawny-----
+BEGIN
+    dodaj_pracownika(
+        p_first_name => 'Janusz',
+        p_last_name => 'Kowalski',
+        p_email => 'test@mail.pl',
+        p_salary    => 15000,
+        p_job_id    => 'SA_MAN',
+        p_department_id => 50
+    );
+END;
+
+-----test wyjątek-----
+BEGIN
+    dodaj_pracownika(
+        p_last_name => 'Nowak',
+        p_salary    => 50000
+    );
+END;
+
+
+
+----------------------------Zadanie 6-----------------------------
+CREATE OR REPLACE PROCEDURE srednia_podwladnych (
+    p_manager_id IN  employees.manager_id%TYPE,
+    p_avg_salary OUT NUMBER
+) AS
+BEGIN
+    SELECT AVG(salary)
+    INTO p_avg_salary
+    FROM employees
+    WHERE manager_id = p_manager_id;
+
+    -- Jeśli manager istnieje, ale nie ma podwładnych, wynik będzie NULL
+    IF p_avg_salary IS NULL THEN
+        DBMS_OUTPUT.PUT_LINE('Manager ' || p_manager_id || ' nie ma podwładnych.');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Średnia zarobków podwładnych: ' || p_avg_salary);
+    END IF;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Nie znaleziono pracowników pod managerem ' || p_manager_id);
+        p_avg_salary := NULL;
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Nieoczekiwany błąd: ' || SQLERRM);
+        p_avg_salary := NULL;
+END;
+/
+
+-----test poprawny-----
+DECLARE
+    v_avg NUMBER;
+BEGIN
+    srednia_podwladnych(100, v_avg);
+
+    DBMS_OUTPUT.PUT_LINE('Wynik OUT: ' || v_avg);
+END;
+
+-----test wyjątek-----
+DECLARE
+    v_avg NUMBER;
+BEGIN
+    srednia_podwladnych(9999, v_avg);
+END;
+
+
+
+----------------------------Zadanie 7-----------------------------
+CREATE OR REPLACE PROCEDURE aktualizuj_wynagrodzenia (
+    p_department_id IN employees.department_id%TYPE,
+    p_percent       IN NUMBER
+) AS
+    e_dept_fk EXCEPTION;
+    PRAGMA EXCEPTION_INIT(e_dept_fk, -2291);   -- ORA-02291
+    
+    v_new_salary employees.salary%TYPE;
+    v_min_salary jobs.min_salary%TYPE;
+    v_max_salary jobs.max_salary%TYPE;
+BEGIN
+    -- Przetwarzamy każdego pracownika w danym departamencie
+    FOR rec IN (
+        SELECT employee_id, salary, job_id
+        FROM employees
+        WHERE department_id = p_department_id
+    )
+    LOOP
+        -- Pobranie widełek z JOBS dla stanowiska pracownika
+        SELECT min_salary, max_salary
+        INTO v_min_salary, v_max_salary
+        FROM jobs
+        WHERE job_id = rec.job_id;
+
+        -- Wyliczenie nowego wynagrodzenia
+        v_new_salary := rec.salary * (1 + p_percent / 100);
+
+        -- Walidacja widełek
+        IF v_new_salary < v_min_salary OR v_new_salary > v_max_salary THEN
+            DBMS_OUTPUT.PUT_LINE(
+                'Pracownik ' || rec.employee_id ||
+                ' — podwyżka przekracza widełki (' ||
+                v_min_salary || ' - ' || v_max_salary || '). Pomijam.'
+            );
+        ELSE
+            UPDATE employees
+            SET salary = v_new_salary
+            WHERE employee_id = rec.employee_id;
+
+            DBMS_OUTPUT.PUT_LINE(
+                'Zaktualizowano pracownika ' || rec.employee_id ||
+                ' — nowa pensja: ' || v_new_salary
+            );
+        END IF;
+    END LOOP;
+
+EXCEPTION
+    WHEN e_dept_fk THEN
+        DBMS_OUTPUT.PUT_LINE('BŁĄD: Nie istnieje department_id=' || p_department_id
+                             || ' (ORA-02291).');
+
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Brak danych stanowiska w JOBS dla któregoś pracownika.');
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Nieoczekiwany błąd: ' || SQLERRM);
+END;
+/
+
+-----test poprawny-----
+BEGIN
+    aktualizuj_wynagrodzenia(50, 10);   -- 10% podwyżki
+END;
+
+-----test wyjątek-----
+BEGIN
+    aktualizuj_wynagrodzenia(9999, 5);
+END;
+
+
+
+----------------------------Zadanie 8-----------------------------
+CREATE OR REPLACE PROCEDURE przenies_pracownika (
+    p_employee_id      IN employees.employee_id%TYPE,
+    p_new_department_id IN employees.department_id%TYPE
+) AS
+    -- Własny wyjątek dla braku pracownika
+    e_no_employee EXCEPTION;
+    PRAGMA EXCEPTION_INIT(e_no_employee, -20020);
+
+    v_exists NUMBER;
+BEGIN
+    -- Sprawdzenie czy pracownik istnieje
+    SELECT COUNT(*) INTO v_exists
+    FROM employees
+    WHERE employee_id = p_employee_id;
+
+    IF v_exists = 0 THEN
+        RAISE_APPLICATION_ERROR(-20020,
+            'Pracownik o ID ' || p_employee_id || ' nie istnieje!');
+    END IF;
+
+    -- Sprawdzenie czy nowy departament istnieje
+    SELECT COUNT(*) INTO v_exists
+    FROM departments
+    WHERE department_id = p_new_department_id;
+
+    IF v_exists = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('BŁĄD: Nowy department_id=' ||
+                              p_new_department_id || ' nie istnieje!');
+        RETURN;
+    END IF;
+
+    -- Przeniesienie pracownika
+    UPDATE employees
+    SET department_id = p_new_department_id
+    WHERE employee_id = p_employee_id;
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Przeniesiono pracownika ' || p_employee_id ||
+        ' do departamentu ' || p_new_department_id
+    );
+
+EXCEPTION
+    WHEN e_no_employee THEN
+        DBMS_OUTPUT.PUT_LINE('BŁĄD: ' || SQLERRM);
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Nieoczekiwany błąd: ' || SQLERRM);
+END;
+/
+
+-----test poprawny-----
+BEGIN
+    przenies_pracownika(100, 50);
+END;
+
+-----test wyjątek-----
+BEGIN
+    przenies_pracownika(99999, 50);
+END;
+
+
+
+----------------------------Zadanie 9-----------------------------
+CREATE OR REPLACE PROCEDURE usun_departament (
+    p_department_id IN departments.department_id%TYPE
+) AS
+    v_count NUMBER;
+BEGIN
+    -- Sprawdzamy, czy w departamencie są pracownicy
+    SELECT COUNT(*)
+    INTO v_count
+    FROM employees
+    WHERE department_id = p_department_id;
+
+    IF v_count > 0 THEN
+        DBMS_OUTPUT.PUT_LINE(
+            'Nie można usunąć departamentu ' || p_department_id ||
+            ' – są przypisani pracownicy (' || v_count || ').'
+        );
+        RETURN;
+    END IF;
+
+    -- Jeśli nie ma pracowników – usunięcie departamentu
+    DELETE FROM departments
+    WHERE department_id = p_department_id;
+
+    DBMS_OUTPUT.PUT_LINE(
+        'Usunięto departament o ID ' || p_department_id
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE(
+            'Wystąpił błąd podczas usuwania departamentu ' ||
+            p_department_id || ': ' || SQLERRM
+        );
+END;
+/
+
+-----test poprawny-----
+BEGIN
+    usun_departament(3000);
+END;
+
+-----test wyjątek-----
+BEGIN
+    usun_departament(50);
+END;
